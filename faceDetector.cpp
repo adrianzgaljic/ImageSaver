@@ -10,13 +10,50 @@ using namespace cv;
 using namespace std;
 using namespace cv::face;
 
+
+void showDisparity(Mat img, Mat img2) {
+    Mat disp, disp8;
+    Ptr<StereoBM> sbm = StereoBM::create(16,9);
+    sbm->setNumDisparities(16);
+    sbm->setPreFilterSize(5);
+    sbm->setPreFilterCap(61);
+    sbm->setMinDisparity(9);
+    sbm->setTextureThreshold(507);
+    sbm->setUniquenessRatio(0);
+    sbm->setSpeckleWindowSize(0);
+    sbm->setSpeckleRange(8);
+    sbm->setDisp12MaxDiff(1);
+    sbm->compute(img, img2, disp);
+    normalize(disp, disp8, 0, 255, CV_MINMAX, CV_8U);
+
+    Ptr<StereoSGBM> sgbm = StereoSGBM::create(0,16,3);
+    sgbm->setNumDisparities(192);
+    sgbm->setPreFilterCap(4);
+    sgbm->setMinDisparity(-64);
+    sgbm->setUniquenessRatio(1);
+    sgbm->setSpeckleWindowSize(150);
+    sgbm->setSpeckleRange(2);
+    sgbm->setDisp12MaxDiff(10);
+    //sgbm->setP1(600);
+    //sgbm->setP2(2400);
+    sgbm->compute(img, img2, disp);
+    normalize(disp, disp8, 0, 255, CV_MINMAX, CV_8U);
+
+    imshow("left", img);
+    imshow("right", img2);
+    imshow("disp", disp8);
+    waitKey(0);
+}
+
+
 vector<vector<Point2f>> faceDetector(const Mat& image) {
     std::vector<Rect> faces;
-    const string cascade_name = "/Users/adrianzgaljic/Desktop/react-native-opencv3-tests/HoughCircles/node_modules/react-native-opencv3/android/build/intermediates/library_assets/debug/out/haarcascade_frontalface_default.xml";
+    const string cascade_name = "/Users/adrianzgaljic/Desktop/doktorski/point clouds and images/haarcascade_frontalface_default.xml";
     CascadeClassifier face_cascade;
     if (not face_cascade.load(cascade_name)) {
         cerr << "Cannot load cascade classifier from file: " <<    cascade_name << endl;
     }
+    cout << "Casscade classifier loaded" << endl;
     Mat gray;
     // The cascade classifier works best on grayscale images
     if (image.channels() > 1) {
@@ -37,7 +74,7 @@ vector<vector<Point2f>> faceDetector(const Mat& image) {
             CASCADE_SCALE_IMAGE + CASCADE_FIND_BIGGEST_OBJECT);
 
 
-    const string facemark_filename = "/Users/adrianzgaljic/Desktop/lbfmodel.yml";
+    const string facemark_filename = "/Users/adrianzgaljic/Desktop/doktorski/point clouds and images/lbfmodel.yml";
     Ptr<Facemark> facemark = createFacemarkLBF();
     facemark->loadModel(facemark_filename);
     vector<vector<Point2f>> shapes;
@@ -48,12 +85,11 @@ vector<vector<Point2f>> faceDetector(const Mat& image) {
 
 int main() {
     cout << "ok" << endl;
-    Mat img = imread("/Users/adrianzgaljic/Desktop/NERO/pointclouds/ensenso snimke fantoma/test 5.2.2020./r.png", 1);
-
-
+    Mat img = imread("/Users/adrianzgaljic/Desktop/doktorski/point clouds and images/face point clouds + images/image_left_1.jpg", 1);
     vector<Rect> faces;
     vector<vector<Point2f>> shapes = faceDetector(img);
-
+    cout << "done" << endl;
+    cout << shapes.at(0).size() << endl;
 
     // Draw the detected landmarks
     for (int j=0; j<18; j++){
